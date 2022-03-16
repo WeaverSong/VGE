@@ -1,0 +1,10 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "outDir": "./js",
+        "target": "ESNext"
+    },
+    "include": [
+        "./ts/**/*.ts"
+    ]
+}
