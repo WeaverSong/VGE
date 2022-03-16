@@ -117,14 +117,34 @@ type Path = PathNode[];
 
 type Radians = number;
 
-const asReadonly = function <T extends object>(thing: T): T
+type Invocable<T, U> = T & { (value: U): void };
+
+/**
+ * Mirrors a value such that reads return as normal, and sets use the provided setter.
+ * Any sets assume that the setter supports values that are deep partialed.
+ */
+const mirror = function <T extends object, U>(thing: T, setter: (value: unknown) => void): Invocable<T, U>
 {
-    return new Proxy(thing, {
-        get: (target, key) => typeof target[key] === "object" ? asReadonly(target[key]) : target[key],
-        has: (target, key) => key in target,
-        ownKeys: (target) => Reflect.ownKeys(target),
+    return new Proxy(() => {}, {
+        get: (target, key) =>
+        {
+            return typeof thing[key] === "object" ?
+                mirror(thing[key], subvalue => setter( { [key]: subvalue })) :
+                thing[key];
+        },
+        set: (_, key, value) =>
+        {
+            setter({ [key]: value });
+            return true;
+        },
+        apply: (target, thisArg, argArray) =>
+        {
+            setter(argArray[0]);
+        },
+        has: (target, key) => key in thing,
+        ownKeys: (target) => Reflect.ownKeys(thing),
         isExtensible: () => false
-    });
+    }) as Invocable<T, U>;
 };
 
 /*
@@ -215,18 +235,36 @@ class CanvasRenderer {
     #settings: RendererSettings;
     #ts: RendererSettings;
 
-    get size(): Size
+    get settings(): Invocable<RendererSettings, PartialRendererSettings>
     {
-        return { ...this.#settings.size };
+        return mirror(this.#settings, value => this.#Settings(value));
     }
-    set size(newValue: Partial<Size>)
+    set settings(value: PartialRendererSettings)
     {
-        this.#Size(newValue);
+        this.#Settings(value);
+    }
+
+    get size(): Invocable<Size, Partial<Size>>
+    {
+        return mirror(this.#settings.size, value => this.#Size(value));
+    }
+    set size(value: Partial<Size>)
+    {
+        this.#Size(value);
+    }
+
+    get shadow(): Invocable<ShadowSettings, Partial<ShadowSettings>>
+    {
+        return mirror(this.#settings.shadow, value => this.#Shadow(value));
+    }
+    set shadow(newValue: Partial<ShadowSettings>)
+    {
+        this.#Shadow(newValue);
     }
 
     static #IsForInternal<T>(value: T, isInternal: boolean): value is Required<T>
     {
-        return isInternal;
+        return !isInternal;
     }
 
     //Basic settings and value adjusting stuff
@@ -235,11 +273,11 @@ class CanvasRenderer {
     /**
      * @param { { width?: number; height?: number; [key: string]: unknown; } } Settings 
      */
-    Settings(Settings?: PartialRendererSettings) {
+    #Settings(Settings?: PartialRendererSettings) {
         if (Settings === undefined) return this.#settings;
 
-        if (Settings.size.width && this.#settings.size.width !== Settings.size.width) this.canvas.width = Settings.size.width;
-        if (Settings.size.height && this.#settings.size.height !== Settings.size.height) this.canvas.height = Settings.size.height;
+        if (Settings?.size?.width && this.#settings.size.width !== Settings.size.width) this.canvas.width = Settings.size.width;
+        if (Settings?.size?.height && this.#settings.size.height !== Settings.size.height) this.canvas.height = Settings.size.height;
 
         for (let key in Settings) {
             this.#settings[key] = Settings[key];
@@ -260,7 +298,7 @@ class CanvasRenderer {
 
         this.Fill(this.#ts.fill, true);
         this.Stroke(this.#ts.stroke, true);
-        this.Shadow(this.#ts.shadow, true);
+        this.#Shadow(this.#ts.shadow, true);
         this.Line(this.#ts.line, true);
         this.Scale(this.#ts.scale, true);
         this.Rotation(this.#ts.rotation, true);
@@ -284,7 +322,7 @@ class CanvasRenderer {
             this.#defaults[key] = Settings[key];
         }
 
-        this.Settings(this.#defaults);
+        this.#Settings(this.#defaults);
     };
 
     //Adjusting single settings. Used internally to actually set things on the context - the others are just for consistency. If not inputs are provided, returns the specified setting
@@ -407,7 +445,7 @@ class CanvasRenderer {
             ?y: number
         }
     */
-    Shadow(Settings: Point & { color: string; blur: number; }, i = false) {
+    #Shadow(Settings: Partial<Point & { color: string; blur: number; }>, i = false) {
 
         if (Settings === undefined) return this.#settings.shadow;
 
@@ -420,7 +458,7 @@ class CanvasRenderer {
         this.ctx.shadowOffsetX = Settings.x;
         this.ctx.shadowOffsetY = Settings.y;
 
-        if (!i) this.#settings.shadow = Settings;
+        if (CanvasRenderer.#IsForInternal(Settings, i)) this.#settings.shadow = Settings;
 
     };
     //Setting the line settings

@@ -168,6 +168,9 @@ class EventManager
             this.fire('preTick');
             this.fire('tick');
             this.fire('postTick');
+
+            this.tick = requestAnimationFrame(() => this.#tick());
+
         } catch (e) {
             console.error("Tick function failed.", e);
             

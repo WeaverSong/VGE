@@ -43,7 +43,7 @@ const drawShapes = function (render = false) {
                 join: "round"
             },
             noClose: true
-        })
+        });
     }
 };
 const drawGrid = function (gridSize: number) {
@@ -70,9 +70,7 @@ const drawGrid = function (gridSize: number) {
                         radius: hovered ? 400 / gridSize : 300 / gridSize,
                         startAngle: 0,
                         endAngle: Math.PI * 2
-                    }],
-
-                    {
+                    }], {
                         fill: hovered ? "#00ff00" : "#000000"
                     });
             }
@@ -117,6 +115,19 @@ EM.subscribe(grid, "click", () => {
 });
 
 EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
+    if (kv.key === "Enter")
+    {
+        CR.settings({
+            shadow: {
+                blur: 15,
+                x: 10,
+                y: 10,
+                color: "#00ff00"
+            }
+        });
+        CR.settings.rotation += Math.PI / 16;
+    }
+
     if (kv.key === "Backspace") {
         grid[grid.length - 1].pop();
         if (mirroredX || mirroredY) grid[grid.length - 2].pop();
