@@ -39,7 +39,6 @@ canvas.onmousemove = ev => {
 
     hoveredX = Math.round((mouseX - 25) / spacing);
     hoveredY = Math.round((mouseY - 25) / spacing);
-
 };
 canvas.onmouseup = ev => {
     EM.fire("click", { x: ev.offsetX, y: ev.offsetY, hoveredX, hoveredY });
@@ -51,18 +50,18 @@ const drawShapes = function (render = false) {
     for (let s = 0; s < grid.length; s++) {
         if (grid[s].list.length > 0 && !grid[s].visual) CR.DrawShape(
 
-            grid[s].list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25})), 
-            
+            grid[s].list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+
             {
-            fill: render ? "#ffffff" : "#00000000",
-            stroke: render ? "#00000000" : "#000000",
-            line: {
-                width: 5,
-                cap: "square",
-                join: "round"
-            },
-            noClose: true
-        });
+                fill: render ? "#ffffff" : "#00000000",
+                stroke: render ? "#00000000" : "#000000",
+                line: {
+                    width: 5,
+                    cap: "square",
+                    join: "round"
+                },
+                noClose: true
+            });
     }
 };
 const drawGrid = function (gridSize: number) {
@@ -163,9 +162,9 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
         while (grid[grid.length - 1].list.length == 0) grid.pop();
 
         let gridEnd = grid[grid.length - 1];
-        
+
         if (gridEnd.isVisual) {
-            
+
             gridEnd.mirrors.forEach(v => {
                 v.list.pop();
                 delete v.visual;
@@ -182,7 +181,7 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
             gridEnd.list.pop();
 
         }
-        
+
 
     } else if (kv.key === " ") {
         CR.Reset();
