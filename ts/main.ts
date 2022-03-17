@@ -29,6 +29,7 @@ let hoveredX = 0;
 let hoveredY = 0;
 
 let cc = false;
+let drawAxis = true;
 
 canvas.onmousemove = ev => {
     mouseX = ev.offsetX;
@@ -213,6 +214,17 @@ const drawGrid = function (gridSize: number) {
         }
     };
 
+    if (drawAxis) {
+        CR.DrawShape(
+            [{ x: 0, y: CR.size.height / 2 + 1}, { x: CR.size.width, y: CR.size.height / 2 + 1 }], {
+            line: { width: 3 }, stroke: "#000000"
+        });
+        CR.DrawShape(
+            [{ x: CR.size.height / 2 + 1, y: 0}, { x: CR.size.width / 2 + 1, y: CR.size.height }], {
+            line: { width: 3 }, stroke: "#000000"
+        });
+    }
+
     drawShapes();
 
 };
@@ -267,5 +279,7 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
         grid[grid.length - 1].mirrorY = mirroredY;
     } else if (kv.key === "c") {
         cc = !cc;
+    } else if (kv.key === "a") {
+        drawAxis = !drawAxis;
     }
 });
