@@ -74,11 +74,8 @@ const drawGrid = function (gridSize: number) {
 
             let hovered = false;
 
-            //if (Vec2.Magnitude(mouseX - (x * spacing + 25), mouseY - (y * spacing + 25)) < 300 / gridSize) {
             if (x === hoveredX && y === hoveredY) {
                 hovered = true;
-                //hoveredX = x;
-                //hoveredY = y;
             };
 
             if ((divisibleBy(x, gridReducer) && divisibleBy(y, gridReducer)) || hovered) {
