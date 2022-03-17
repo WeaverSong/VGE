@@ -11,20 +11,15 @@ let CR = new CanvasRenderer({
 
 interface path {
     list: { x: number, y: number }[],
-    mirror?: path,
-    isVisual?: boolean,
-    visual?: path,
-    mirrors?: path[]
+    mirrorX?: boolean,
+    mirrorY?: boolean
 };
-let grid: path[] = [{ list: [] }, { list: [] }];
-
-//TEMP
-grid[0].mirror = grid[1]; grid[1].mirror = grid[0];
+let grid: path[] = [{ list: [] }];
 
 let gridSize = 41;
 let spacing = (CR.size.height - 25) / gridSize;
 
-let mirroredY = true;
+let mirroredY = false;
 let mirroredX = false;
 let gridReducer = 2;
 
@@ -48,16 +43,14 @@ canvas.onmouseup = ev => {
 };
 window.onkeyup = (kv: KeyboardEvent) => EM.fire("keyUp", kv);
 
-const divisibleBy = (n: number, n2: number) => Math.round(n / n2) === n / n2;
 const drawShapes = function (render = false) {
     for (let s = 0; s < grid.length; s++) {
 
         let shape = grid[s];
-        let shapeMirror = grid[s].mirror;
-
+        let shapeMirror = mirroredPath(shape, gridSize);
         if (shape.list.length === 0) continue;
 
-        if (!shape.visual) {
+        if (!shape.mirrorX && !shape.mirrorY) {
             CR.DrawShape(
 
                 shape.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
@@ -72,21 +65,67 @@ const drawShapes = function (render = false) {
                     },
                     noClose: true
                 });
-        }
+        } else if (s !== grid.length - 1 && (shape.mirrorX || shape.mirrorY)) {
+            let end = shape.list[shape.list.length - 1];
+            let endMirror = shapeMirror.list[shapeMirror.list.length - 1];
 
-        let mx = hoveredX, my = hoveredY;
-        if (mirroredY) mx = (((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX);
-        if (mirroredX) my = (((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY);
-        const {x, y} = shape.list[shape.list.length - 1];
 
-        //If the shape is the final one, it's the one the user is drawing, if its mirror is the final one it's the mirror of that.
-        if (s === grid.length - 1) {
+
+            if (end.x === endMirror.x && end.y === endMirror.y) {
+
+                let tempShape = free(shape);
+                let tempShapeMirror = free(shapeMirror); tempShapeMirror.list.pop();
+                for (let i = tempShapeMirror.list.length - 1; i >= 0; i--) {
+                    tempShape.list.push(tempShapeMirror.list[i]);
+                };
+
+                CR.DrawShape(
+                    tempShape.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+                    {
+                        fill: render ? "#ffffff" : "#00000000",
+                        stroke: render ? "#00000000" : "#000000",
+                        line: {
+                            width: 5,
+                            cap: "square",
+                            join: "round"
+                        },
+                        noClose: true
+                    });
+
+            } else {
+                CR.DrawShape(
+                    shape.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+                    {
+                        fill: render ? "#ffffff" : "#00000000",
+                        stroke: render ? "#00000000" : "#000000",
+                        line: {
+                            width: 5,
+                            cap: "square",
+                            join: "round"
+                        },
+                        noClose: true
+                    });
+                CR.DrawShape(
+                    mirroredPath(shape, gridSize).list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+                    {
+                        fill: render ? "#ffffff" : "#00000000",
+                        stroke: render ? "#00000000" : "#000000",
+                        line: {
+                            width: 5,
+                            cap: "square",
+                            join: "round"
+                        },
+                        noClose: true
+                    });
+            }
+
+
+        } else {
             CR.DrawShape(
-                [{x: x * spacing + 25, y: y * spacing + 25}, {x: hoveredX * spacing + 25, y: hoveredY * spacing + 25}],
-
+                shape.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
                 {
                     fill: render ? "#ffffff" : "#00000000",
-                    stroke: render ? "#00000000" : "#00ff00",
+                    stroke: render ? "#00000000" : "#000000",
                     line: {
                         width: 5,
                         cap: "square",
@@ -94,13 +133,11 @@ const drawShapes = function (render = false) {
                     },
                     noClose: true
                 });
-        } else if (shapeMirror === grid[grid.length - 1]) {
             CR.DrawShape(
-                [{x: x * spacing + 25, y: y * spacing + 25}, {x: mx * spacing + 25, y: my * spacing + 25}],
-
+                shapeMirror.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
                 {
                     fill: render ? "#ffffff" : "#00000000",
-                    stroke: render ? "#00000000" : "#0000dd",
+                    stroke: render ? "#00000000" : "#000000",
                     line: {
                         width: 5,
                         cap: "square",
@@ -108,8 +145,39 @@ const drawShapes = function (render = false) {
                     },
                     noClose: true
                 });
-        }
+        };
 
+        if (render || s !== grid.length - 1) continue;
+
+        //TODO: Re-add the preview lines
+        let firstPoint = shape.list[shape.list.length - 1];
+        let firstMirroredPoint = shapeMirror.list[shapeMirror.list.length - 1];
+        let mirroredEnd = {x: mirroredY ? mirrored(hoveredX, gridSize) : hoveredX, y: mirroredX ? mirrored(hoveredY, gridSize) : hoveredY};
+
+        CR.DrawShape(
+            [firstPoint, {x: hoveredX, y: hoveredY}].map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+            {
+                fill: "#00000000",
+                stroke: "#00ff00",
+                line: {
+                    width: 5,
+                    cap: "square",
+                    join: "round"
+                },
+                noClose: true
+            });
+        if (mirroredX || mirroredY) CR.DrawShape(
+            [firstMirroredPoint, mirroredEnd].map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+            {
+                fill: "#00000000",
+                stroke: "#0000ff",
+                line: {
+                    width: 5,
+                    cap: "square",
+                    join: "round"
+                },
+                noClose: true
+            });
 
     }
 };
@@ -150,80 +218,28 @@ const drawGrid = function (gridSize: number) {
 };
 const addBlanks = function () {
 
-    let t: path[] = [{ list: [] }];
-    if (mirroredY || mirroredX) {
-        t.push({ list: [], mirror: t[0] });
-        t[0].mirror = t[1];
-    }
-    grid.push(...t);
+    grid.push({ list: [], mirrorX: mirroredX, mirrorY: mirroredY });
 
 };
 const undo = function () {
 
     while (grid[grid.length - 1].list.length == 0) grid.pop();
 
-    let gridEnd = grid[grid.length - 1];
-
-    if (gridEnd.isVisual) {
-
-        gridEnd.mirrors.forEach(v => {
-            v.list.pop();
-            delete v.visual;
-        })
-        grid.pop();
-
-    } else if (gridEnd.mirror) {
-
-        gridEnd.mirror.list.pop();
-        gridEnd.list.pop();
-
-    } else {
-
-        gridEnd.list.pop();
-
-    }
+    grid[grid.length - 1].list.pop();
 
 };
 const addLine = function (x: number, y: number) {
 
     let gridEnd = grid[grid.length - 1];
-    let gridEndMirror = gridEnd.mirror;
+    gridEnd.list.push({ x: x, y: y }); let gridEndEnd = gridEnd.list[gridEnd.list.length - 1];
+    let gridEndMirror = mirroredPath(gridEnd, gridSize); let gridEndMirrorEnd = gridEndMirror.list[gridEndMirror.list.length - 1];
 
-    gridEnd.list.push({ x: x, y: y });
-    let mx = x;
-    let my = y;
-
-    if (mirroredY || mirroredX) {
-
-        if (mirroredY) mx = ((gridSize - 1) / 2 - x) * 2 + x;
-        if (mirroredX) my = ((gridSize - 1) / 2 - y) * 2 + y;
-
-        gridEndMirror.list.push({ x: mx, y: my });
-
-    };
-
-    if (gridEnd.list.length > 1 && x === gridEnd.list[0].x && y === gridEnd.list[0].y) {
+    if (gridEnd.list.length > 1 &&
+        ((x === gridEnd.list[0].x && y === gridEnd.list[0].y) ||
+        ((gridEnd.mirrorX || gridEnd.mirrorY) && gridEndEnd.x === gridEndMirrorEnd.x && gridEndEnd.y === gridEndMirrorEnd.y))
+        ) {
         addBlanks();
-    } else if ((mirroredY || mirroredX) && x === mx && y === my && gridEnd.list.length > 1) {
-
-        let g: path = { list: JSON.parse(JSON.stringify(gridEndMirror.list)) };
-        g.list.pop();
-        let h: path = { list: JSON.parse(JSON.stringify(gridEnd.list)), isVisual: true };
-
-        for (let i = g.list.length - 1; i >= 0; i--) {
-            h.list.push(g.list[i]);
-        }
-
-        gridEnd.visual = h;
-        gridEndMirror.visual = h;
-        h.mirrors = [gridEnd, gridEndMirror];
-        grid.push(h);
-
-        addBlanks();
-
     }
-
-
 
 };
 
@@ -245,10 +261,10 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
         navigator.clipboard.writeText(CR.GetDataURL());
     } else if (kv.key === "x") {
         mirroredX = !mirroredX;
-        addBlanks();
+        grid[grid.length - 1].mirrorX = mirroredX;
     } else if (kv.key === "y") {
         mirroredY = !mirroredY;
-        addBlanks();
+        grid[grid.length - 1].mirrorY = mirroredY;
     } else if (kv.key === "c") {
         cc = !cc;
     }
