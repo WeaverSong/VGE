@@ -9,12 +9,23 @@ let CR = new CanvasRenderer({
     }
 }, canvas);
 
-let grid = [[]];
+interface path {
+    list: { x: number, y: number }[],
+    mirror?: path,
+    isVisual?: boolean,
+    visual?: path,
+    mirrors?: path[]
+};
+let grid: path[] = [{ list: [] }, { list: [] }];
+
+//TEMP
+grid[0].mirror = grid[1]; grid[1].mirror = grid[0];
+
 let gridSize = 41;
 let spacing = (CR.size.height - 25) / gridSize;
 
+let mirroredY = true;
 let mirroredX = false;
-let mirroredY = false;
 let gridReducer = 2;
 
 let mouseX = 0;
@@ -34,7 +45,7 @@ window.onkeyup = (kv: KeyboardEvent) => EM.fire("keyUp", kv);
 const divisibleBy = (n: number, n2: number) => Math.round(n / n2) === n / n2;
 const drawShapes = function (render = false) {
     for (let s = 0; s < grid.length; s++) {
-        if (grid[s].length > 0) CR.DrawShape(grid[s], {
+        if (grid[s].list.length > 0 && !grid[s].visual) CR.DrawShape(grid[s].list, {
             fill: render ? "#ffffff" : "#00000000",
             stroke: render ? "#00000000" : "#000000",
             line: {
@@ -71,8 +82,8 @@ const drawGrid = function (gridSize: number) {
                         startAngle: 0,
                         endAngle: Math.PI * 2
                     }], {
-                        fill: hovered ? "#00ff00" : "#000000"
-                    });
+                    fill: hovered ? "#00ff00" : "#000000"
+                });
             }
 
         }
@@ -81,78 +92,101 @@ const drawGrid = function (gridSize: number) {
     drawShapes();
 
 };
+const addBlanks = function () {
+
+    let t: path[] = [{ list: [] }];
+    if (mirroredY || mirroredX) {
+        t.push({ list: [], mirror: t[0] });
+        t[0].mirror = t[1];
+    }
+    grid.push(...t);
+
+};
+const addLine = function (x: number, y: number) {
+
+    let gridEnd = grid[grid.length - 1];
+    let gridEndMirror = gridEnd.mirror;
+
+
+    gridEnd.list.push({ x: hoveredX * spacing + 25, y: hoveredY * spacing + 25 });
+    let mx = hoveredX;
+    let my = hoveredY;
+
+    if (mirroredY || mirroredX) {
+
+        if (mirroredY) mx = ((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX;
+        if (mirroredX) my = ((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY;
+
+        gridEndMirror.list.push({ x: mx * spacing + 25, y: my * spacing + 25 });
+
+    };
+
+    if (gridEnd.list.length > 1 && hoveredX * spacing + 25 === gridEnd.list[0].x && hoveredY * spacing + 25 === gridEnd.list[0].y) {
+        addBlanks();
+    } else if ((mirroredY || mirroredX) && hoveredX === mx && hoveredY === my && gridEnd.list.length > 1) {
+
+        let g: path = { list: JSON.parse(JSON.stringify(gridEndMirror.list)) };
+        g.list.pop();
+        let h: path = { list: JSON.parse(JSON.stringify(gridEnd.list)), isVisual: true };
+
+        for (let i = g.list.length - 1; i >= 0; i--) {
+            h.list.push(g.list[i]);
+        }
+
+        gridEnd.visual = h;
+        gridEndMirror.visual = h;
+        h.mirrors = [gridEnd, gridEndMirror];
+        grid.push(h);
+
+        addBlanks();
+
+    }
+
+};
 
 EM.subscribe(grid, "preTick", () => drawGrid(gridSize))
 EM.subscribe(grid, "click", () => {
 
-    grid[grid.length - 1].push({ x: hoveredX * spacing + 25, y: hoveredY * spacing + 25 });
-    let mx = hoveredX;
-    let my = hoveredY;
-
-    if (mirroredX || mirroredY) {
-
-        if (mirroredX) mx = ((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX;
-        if (mirroredY) my = ((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY;
-
-        grid[grid.length - 2].push({ x: mx * spacing + 25, y: my * spacing + 25 });
-
-    };
-
-    if (grid[grid.length - 1].length > 1 && hoveredX * spacing + 25 === grid[grid.length - 1][0].x && hoveredY * spacing + 25 === grid[grid.length - 1][0].y) {
-        grid.push([]);
-        if (mirroredX || mirroredY) grid.push([]);
-    } else if ((mirroredX || mirroredY) && hoveredX === mx && hoveredY === my && grid[grid.length - 1].length > 1) {
-
-        grid[grid.length - 1].pop();
-        for (let i = grid[grid.length - 1].length - 1; i >= 0; i--) {
-            grid[grid.length - 2].push(grid[grid.length - 1][i]);
-        }
-        grid[grid.length - 1] = JSON.parse(JSON.stringify(grid[grid.length - 2]));
-
-        grid.push([], []);
-    }
+    addLine(hoveredX, hoveredY);
 
 });
 
 EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
-    if (kv.key === "Enter")
-    {
-        CR.settings({
-            shadow: {
-                blur: 15,
-                x: 10,
-                y: 10,
-                color: "#00ff00"
-            }
-        });
-        CR.settings.rotation += Math.PI / 16;
-    }
-
     if (kv.key === "Backspace") {
-        grid[grid.length - 1].pop();
-        if (mirroredX || mirroredY) grid[grid.length - 2].pop();
 
-        if (grid[grid.length - 1].length === 1) {
-            grid.pop();
-            if (mirroredX || mirroredY) grid.pop();
-            grid.push([]);
-            if (mirroredX || mirroredY) grid.push([]);
-        } else if (grid[grid.length - 1].length === 0) {
-            grid.pop();
-            if (mirroredX || mirroredY) grid.pop();
+        while (grid[grid.length - 1].list.length == 0) grid.pop();
 
-            if (grid.length > 0) {
-                grid[grid.length - 1].pop();
-                if (mirroredX || mirroredY) grid[grid.length - 2].pop();
-            } else {
-                grid.push([]);
-                if (mirroredX || mirroredY) grid.push([]);
-            }
+        let gridEnd = grid[grid.length - 1];
+        
+        if (gridEnd.isVisual) {
+            
+            gridEnd.mirrors.forEach(v => {
+                v.list.pop();
+                delete v.visual;
+            })
+            grid.pop();
+
+        } else if (gridEnd.mirror) {
+
+            gridEnd.mirror.list.pop();
+            gridEnd.list.pop();
+
+        } else {
+
+            gridEnd.list.pop();
 
         }
+        
+
     } else if (kv.key === " ") {
         CR.Reset();
         drawShapes(true);
         navigator.clipboard.writeText(CR.GetDataURL());
+    } else if (kv.key === "x") {
+        mirroredX = !mirroredX;
+        addBlanks();
+    } else if (kv.key === "y") {
+        mirroredY = !mirroredY;
+        addBlanks();
     }
 });
