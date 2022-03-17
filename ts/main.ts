@@ -72,7 +72,7 @@ const drawGrid = function (gridSize: number) {
         for (let x = 0; x < gridSize; x++) {
 
             let hovered = false;
-
+            
             if (x === hoveredX && y === hoveredY) {
                 hovered = true;
             };
@@ -112,23 +112,22 @@ const addLine = function (x: number, y: number) {
     let gridEnd = grid[grid.length - 1];
     let gridEndMirror = gridEnd.mirror;
 
-
-    gridEnd.list.push({ x: hoveredX, y: hoveredY });
-    let mx = hoveredX;
-    let my = hoveredY;
+    gridEnd.list.push({ x: x, y: y });
+    let mx = x;
+    let my = y;
 
     if (mirroredY || mirroredX) {
 
-        if (mirroredY) mx = ((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX;
-        if (mirroredX) my = ((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY;
+        if (mirroredY) mx = ((gridSize - 1) / 2 - x) * 2 + x;
+        if (mirroredX) my = ((gridSize - 1) / 2 - y) * 2 + y;
 
         gridEndMirror.list.push({ x: mx, y: my });
 
     };
 
-    if (gridEnd.list.length > 1 && hoveredX === gridEnd.list[0].x && hoveredY === gridEnd.list[0].y) {
+    if (gridEnd.list.length > 1 && x === gridEnd.list[0].x && y === gridEnd.list[0].y) {
         addBlanks();
-    } else if ((mirroredY || mirroredX) && hoveredX === mx && hoveredY === my && gridEnd.list.length > 1) {
+    } else if ((mirroredY || mirroredX) && x === mx && y === my && gridEnd.list.length > 1) {
 
         let g: path = { list: JSON.parse(JSON.stringify(gridEndMirror.list)) };
         g.list.pop();
