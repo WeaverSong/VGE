@@ -33,12 +33,15 @@ let mouseY = 0;
 let hoveredX = 0;
 let hoveredY = 0;
 
+let cc = false;
+
 canvas.onmousemove = ev => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
 
     hoveredX = Math.round((mouseX - 25) / spacing);
     hoveredY = Math.round((mouseY - 25) / spacing);
+
 };
 canvas.onmouseup = ev => {
     EM.fire("click", { x: ev.offsetX, y: ev.offsetY, hoveredX, hoveredY });
@@ -48,34 +51,82 @@ window.onkeyup = (kv: KeyboardEvent) => EM.fire("keyUp", kv);
 const divisibleBy = (n: number, n2: number) => Math.round(n / n2) === n / n2;
 const drawShapes = function (render = false) {
     for (let s = 0; s < grid.length; s++) {
-        if (grid[s].list.length > 0 && !grid[s].visual) CR.DrawShape(
 
-            grid[s].list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+        let shape = grid[s];
+        let shapeMirror = grid[s].mirror;
 
-            {
-                fill: render ? "#ffffff" : "#00000000",
-                stroke: render ? "#00000000" : "#000000",
-                line: {
-                    width: 5,
-                    cap: "square",
-                    join: "round"
-                },
-                noClose: true
-            });
+        if (shape.list.length === 0) continue;
+
+        if (!shape.visual) {
+            CR.DrawShape(
+
+                shape.list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 })),
+
+                {
+                    fill: render ? "#ffffff" : "#00000000",
+                    stroke: render ? "#00000000" : "#000000",
+                    line: {
+                        width: 5,
+                        cap: "square",
+                        join: "round"
+                    },
+                    noClose: true
+                });
+        }
+
+        let mx = hoveredX, my = hoveredY;
+        if (mirroredY) mx = (((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX);
+        if (mirroredX) my = (((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY);
+        const {x, y} = shape.list[shape.list.length - 1];
+
+        //If the shape is the final one, it's the one the user is drawing, if its mirror is the final one it's the mirror of that.
+        if (s === grid.length - 1) {
+            CR.DrawShape(
+                [{x: x * spacing + 25, y: y * spacing + 25}, {x: hoveredX * spacing + 25, y: hoveredY * spacing + 25}],
+
+                {
+                    fill: render ? "#ffffff" : "#00000000",
+                    stroke: render ? "#00000000" : "#00ff00",
+                    line: {
+                        width: 5,
+                        cap: "square",
+                        join: "round"
+                    },
+                    noClose: true
+                });
+        } else if (shapeMirror === grid[grid.length - 1]) {
+            CR.DrawShape(
+                [{x: x * spacing + 25, y: y * spacing + 25}, {x: mx * spacing + 25, y: my * spacing + 25}],
+
+                {
+                    fill: render ? "#ffffff" : "#00000000",
+                    stroke: render ? "#00000000" : "#0000dd",
+                    line: {
+                        width: 5,
+                        cap: "square",
+                        join: "round"
+                    },
+                    noClose: true
+                });
+        }
+
+
     }
 };
 const drawGrid = function (gridSize: number) {
 
     CR.Reset();
 
+    let mx = hoveredX, my = hoveredY;
+    if (mirroredY) mx = (((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX);
+    if (mirroredX) my = (((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY);
+
     for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
 
-            let hovered = false;
-            
-            if (x === hoveredX && y === hoveredY) {
-                hovered = true;
-            };
+            let hovered = 0;
+            if (x === hoveredX && y === hoveredY) hovered = 1;
+            else if (x === mx && y === my) hovered = 2;
 
             if ((divisibleBy(x, gridReducer) && divisibleBy(y, gridReducer)) || hovered) {
                 CR.DrawShape(
@@ -83,11 +134,11 @@ const drawGrid = function (gridSize: number) {
                         type: "Arc",
                         x: x * spacing + 25,
                         y: y * spacing + 25,
-                        radius: hovered ? 400 / gridSize : 300 / gridSize,
+                        radius: hovered !== 0 ? 400 / gridSize : 300 / gridSize,
                         startAngle: 0,
                         endAngle: Math.PI * 2
                     }], {
-                    fill: hovered ? "#00ff00" : "#000000"
+                    fill: hovered === 1 ? "#00ff00" : hovered === 2 ? "#0000ff" : "#000000"
                 });
             }
 
@@ -105,6 +156,32 @@ const addBlanks = function () {
         t[0].mirror = t[1];
     }
     grid.push(...t);
+
+};
+const undo = function () {
+
+    while (grid[grid.length - 1].list.length == 0) grid.pop();
+
+    let gridEnd = grid[grid.length - 1];
+
+    if (gridEnd.isVisual) {
+
+        gridEnd.mirrors.forEach(v => {
+            v.list.pop();
+            delete v.visual;
+        })
+        grid.pop();
+
+    } else if (gridEnd.mirror) {
+
+        gridEnd.mirror.list.pop();
+        gridEnd.list.pop();
+
+    } else {
+
+        gridEnd.list.pop();
+
+    }
 
 };
 const addLine = function (x: number, y: number) {
@@ -146,6 +223,8 @@ const addLine = function (x: number, y: number) {
 
     }
 
+
+
 };
 
 EM.subscribe(grid, "preTick", () => drawGrid(gridSize))
@@ -158,29 +237,7 @@ EM.subscribe(grid, "click", () => {
 EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
     if (kv.key === "Backspace") {
 
-        while (grid[grid.length - 1].list.length == 0) grid.pop();
-
-        let gridEnd = grid[grid.length - 1];
-
-        if (gridEnd.isVisual) {
-
-            gridEnd.mirrors.forEach(v => {
-                v.list.pop();
-                delete v.visual;
-            })
-            grid.pop();
-
-        } else if (gridEnd.mirror) {
-
-            gridEnd.mirror.list.pop();
-            gridEnd.list.pop();
-
-        } else {
-
-            gridEnd.list.pop();
-
-        }
-
+        undo();
 
     } else if (kv.key === " ") {
         CR.Reset();
@@ -192,5 +249,7 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
     } else if (kv.key === "y") {
         mirroredY = !mirroredY;
         addBlanks();
+    } else if (kv.key === "c") {
+        cc = !cc;
     }
 });
