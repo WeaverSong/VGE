@@ -36,6 +36,10 @@ let hoveredY = 0;
 canvas.onmousemove = ev => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
+
+    hoveredX = Math.round((mouseX - 25) / spacing);
+    hoveredY = Math.round((mouseY - 25) / spacing);
+
 };
 canvas.onmouseup = ev => {
     EM.fire("click", { x: ev.offsetX, y: ev.offsetY, hoveredX, hoveredY });
@@ -45,7 +49,11 @@ window.onkeyup = (kv: KeyboardEvent) => EM.fire("keyUp", kv);
 const divisibleBy = (n: number, n2: number) => Math.round(n / n2) === n / n2;
 const drawShapes = function (render = false) {
     for (let s = 0; s < grid.length; s++) {
-        if (grid[s].list.length > 0 && !grid[s].visual) CR.DrawShape(grid[s].list, {
+        if (grid[s].list.length > 0 && !grid[s].visual) CR.DrawShape(
+
+            grid[s].list.map(v => ({ ...v, x: v.x * spacing + 25, y: v.y * spacing + 25})), 
+            
+            {
             fill: render ? "#ffffff" : "#00000000",
             stroke: render ? "#00000000" : "#000000",
             line: {
@@ -66,10 +74,11 @@ const drawGrid = function (gridSize: number) {
 
             let hovered = false;
 
-            if (Vec2.Magnitude(mouseX - (x * spacing + 25), mouseY - (y * spacing + 25)) < 300 / gridSize) {
+            //if (Vec2.Magnitude(mouseX - (x * spacing + 25), mouseY - (y * spacing + 25)) < 300 / gridSize) {
+            if (x === hoveredX && y === hoveredY) {
                 hovered = true;
-                hoveredX = x;
-                hoveredY = y;
+                //hoveredX = x;
+                //hoveredY = y;
             };
 
             if ((divisibleBy(x, gridReducer) && divisibleBy(y, gridReducer)) || hovered) {
@@ -108,7 +117,7 @@ const addLine = function (x: number, y: number) {
     let gridEndMirror = gridEnd.mirror;
 
 
-    gridEnd.list.push({ x: hoveredX * spacing + 25, y: hoveredY * spacing + 25 });
+    gridEnd.list.push({ x: hoveredX, y: hoveredY });
     let mx = hoveredX;
     let my = hoveredY;
 
@@ -117,11 +126,11 @@ const addLine = function (x: number, y: number) {
         if (mirroredY) mx = ((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX;
         if (mirroredX) my = ((gridSize - 1) / 2 - hoveredY) * 2 + hoveredY;
 
-        gridEndMirror.list.push({ x: mx * spacing + 25, y: my * spacing + 25 });
+        gridEndMirror.list.push({ x: mx, y: my });
 
     };
 
-    if (gridEnd.list.length > 1 && hoveredX * spacing + 25 === gridEnd.list[0].x && hoveredY * spacing + 25 === gridEnd.list[0].y) {
+    if (gridEnd.list.length > 1 && hoveredX === gridEnd.list[0].x && hoveredY === gridEnd.list[0].y) {
         addBlanks();
     } else if ((mirroredY || mirroredX) && hoveredX === mx && hoveredY === my && gridEnd.list.length > 1) {
 
