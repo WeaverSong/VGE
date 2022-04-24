@@ -227,14 +227,15 @@ const drawShapes = function (render = false) {
         } else if (tool === toolTypes.Arc) {
             if (tempVars.x1 === undefined) return;
             else if (tempVars.x2 === undefined) {
+                let angle = Vec2.Angle(hoveredX - tempVars.x1, hoveredY - tempVars.y1);
                 let tempArc: path = {
-                    list: [{
+                    list: [...shape.list, {
                         type: "Arc",
                         x: tempVars.x1,
                         y: tempVars.y1,
                         radius: Vec2.Magnitude({ x: hoveredX - tempVars.x1, y: hoveredY - tempVars.y1 }),
-                        startAngle: 0,
-                        endAngle: Math.PI * 2,
+                        startAngle: angle,
+                        endAngle: angle + Math.PI * 2,
                         startPoint: {x: hoveredX, y: hoveredY},
                         endPoint: {x: hoveredX, y: hoveredY}
                     }], mirrorX: mirroredX, mirrorY: mirroredY
@@ -246,7 +247,7 @@ const drawShapes = function (render = false) {
                 let endAngle = Vec2.Angle(hoveredX - tempVars.x1, hoveredY - tempVars.y1);
                 if (endAngle === startAngle) endAngle += Math.PI * 2;
                 let tempArc: path = {
-                    list: [{
+                    list: [...shape.list, {
                         type: "Arc",
                         x: tempVars.x1,
                         y: tempVars.y1,

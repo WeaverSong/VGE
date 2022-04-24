@@ -34,8 +34,8 @@ const mirroredPath = (path: path, gridSize: number): path => {
                     endPoint,
                     radius: v.radius,
                     antiClockWise: !v.antiClockWise,
-                    startAngle: startAngle == endAngle ? 0 : startAngle,
-                    endAngle: startAngle == endAngle ? Math.PI * 2 : endAngle
+                    startAngle: startAngle,
+                    endAngle: startAngle == endAngle ? endAngle - Math.PI * 2 : endAngle
                 }
             }
         })
