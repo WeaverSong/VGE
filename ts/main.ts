@@ -335,14 +335,6 @@ const addLine = function (x: number, y: number) {
     gridEnd.list.push({ x, y, type: "Point", startPoint: {x, y}, endPoint: {x, y} }); let gridEndEnd = gridEnd.list[gridEnd.list.length - 1];
     let gridEndMirror = mirroredPath(gridEnd, gridSize); let gridEndMirrorEnd = getEndPoint(gridEndMirror.list[gridEndMirror.list.length - 1]);
 
-    let startPoint = getStartPoint(gridEnd.list[0]);
-    if (gridEnd.list.length > 1 &&
-        ((x === startPoint.x && y === startPoint.y) ||
-            ((gridEnd.mirrorX || gridEnd.mirrorY) && gridEndEnd.x === gridEndMirrorEnd.x && gridEndEnd.y === gridEndMirrorEnd.y))
-    ) {
-        addBlanks();
-    }
-
 };
 const addArc = function (x: number, y: number) {
     if (tempVars.x1 === undefined) {
@@ -370,14 +362,6 @@ const addArc = function (x: number, y: number) {
             endPoint: {x: hoveredX, y: hoveredY},
             antiClockWise: !cc
         });
-        let endPoint = getEndPoint(gridEnd.list[gridEnd.list.length - 1]);
-        let startPoint = getStartPoint(gridEnd.list[0]);
-        let mirror = mirroredPath(gridEnd, gridSize);
-        let mirroredEndPoint = getEndPoint(mirror.list[mirror.list.length - 1]);
-        if ((endPoint.x === startPoint.x && endPoint.y === startPoint.y) || ((mirroredX || mirroredY) && endPoint.x === mirroredEndPoint.x && endPoint.y === mirroredEndPoint.y)) {
-            addBlanks();
-        }
-
 
         tempVars = {};
 
