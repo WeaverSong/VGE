@@ -4,13 +4,39 @@ const divisibleBy = (n: number, n2: number) => Math.round(n / n2) === n / n2;
 
 const mirrored = (number: number, gridSize: number) => (((gridSize - 1) / 2 - number) * 2 + number);
 
-const mirroredPath = (path: {list: {x: number, y: number}[], mirrorX?: boolean, mirrorY?: boolean}, gridSize: number) => {
-
-    return { ...path, 
-        list: path.list.map(v => ({
-            x: path.mirrorY ? mirrored(v.x, gridSize) : v.x,
-            y: path.mirrorX ? mirrored(v.y, gridSize) : v.y
-            }))
+const mirroredPath = (path: path, gridSize: number): path => {
+    return {
+        ...path,
+        list: path.list.map(v => {
+            if (v.type === "Point") {
+                let x = path.mirrorY ? mirrored(v.x, gridSize) : v.x;
+                let y = path.mirrorX ? mirrored(v.y, gridSize) : v.y
+                return {
+                 x,
+                 y,
+                 type: "Point",
+                 startPoint: {x, y},
+                 endPoint: {x, y}
+                };
+            }
+            else if (v.type === "Arc") {
+                let startPoint = { x: path.mirrorY ? mirrored(v.startPoint.x, gridSize) : v.startPoint.x, y: path.mirrorX ? mirrored(v.startPoint.y, gridSize) : v.startPoint.y };
+                let endPoint = { x: path.mirrorY ? mirrored(v.endPoint.x, gridSize) : v.endPoint.x, y: path.mirrorX ? mirrored(v.endPoint.y, gridSize) : v.endPoint.y };
+                let x = path.mirrorY ? mirrored(v.x, gridSize) : v.x;
+                let y = path.mirrorX ? mirrored(v.y, gridSize) : v.y;
+                return {
+                    x,
+                    y,
+                    startPoint,
+                    endPoint,
+                    radius: v.radius,
+                    antiClockWise: !v.antiClockWise,
+                    startAngle: Vec2.Angle(startPoint.x - x, startPoint.y - y),
+                    endAngle: Vec2.Angle(endPoint.x - x, endPoint.y - y),
+                    type: "Arc"
+                }
+            }
+        })
     };
 
 };

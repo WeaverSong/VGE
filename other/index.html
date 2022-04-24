@@ -6,10 +6,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VGE</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="../js/vanilla-picker.min.js"></script>
+
 </head>
 <body>
 
-    <canvas id="canvas"></canvas>
+    <div id="main">
+        <div id="leftBar" class="bar">
+            <button id="tool-line">Line</button>
+            <button id="tool-arc">Arc</button>
+            <button id="tool-arc-between">Arc between</button>
+        </div>
+        <div id="container">
+            <canvas id="canvas"></canvas>
+            <div id="overlay" class="gone">
+                <div id="topbar">
+                    <div id="tab-fill" class="tab tab-active">Fill</div>
+                    <div id="tab-stroke" class="tab tab-inactive">Stroke</div>
+                    <div id="tab-shadow" class="tab tab-inactive">Shadow</div>
+                </div>
+                <div id="mainbox">
+                    <div id="main-fill" class="box"></div>
+                    <div id="main-stroke" class="box gone">
+                        <div class="flex-down">
+                            <div id="stroke-color"></div>
+                            <div id="stroke-size-container" class="ui_container flex-down">
+                                <label for="stroke-size" class="font-large">Size:</label>
+                                <input type="range" min="1" max="30" value="15" id="stroke-size-slider">
+                                <input type="text" class="font-large text-input" min="1" max="30" value="15" id="stroke-size-text">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="main-shadow" class="box gone">
+                        <div class="flex-down">
+                            <div id="shadow-color"></div>
+                            <div id="shadow-size-container" class="ui_container flex-down">
+                                <label class="font-large">Blur:</label>
+                                <input type="range" min="1" max="50" value="15" id="shadow-blur-slider">
+                                <input type="text" class="font-large text-input" min="1" max="50" value="15" id="shadow-blur-text">
+                                <br>
+                                <label class="font-large">X:</label>
+                                <input type="range" min="-25" max="25" value="0" id="shadow-x-slider">
+                                <input type="text" class="font-large text-input" min="-25" max="25" value="0" id="shadow-x-text">
+                                <br>
+                                <label class="font-large">Y:</label>
+                                <input type="range" min="-25" max="25" value="0" id="shadow-y-slider">
+                                <input type="text" class="font-large text-input" min="-25" max="25" value="0" id="shadow-y-text">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="button-box">
+                    <button id="resume">Resume Editing</button>
+                    <button id="export">Export</button>
+                </div>
+            </div>
+        </div>
+        <div id="rightBar" class="bar">
+            <button id="export-menu">Export</button>
+        </div>
+    </div>
+
 
     <script src="../js/CanvasRenderer.js"></script>
     <script src="../js/EventManager.js"></script>

@@ -770,8 +770,8 @@ class CanvasRenderer {
             }
 
         });
-        if (this.#ts.noClose && Positions.length > 1) this.ctx.moveTo(Positions[Positions.length - 2].x, Positions[Positions.length - 2].y);
-        this.ctx.closePath();
+        //if (this.#ts.noClose && Positions.length > 1) this.ctx.moveTo(Positions[Positions.length - 2].x, Positions[Positions.length - 2].y);
+        if (!this.#ts.noClose) this.ctx.closePath();
 
         this.ctx.stroke();
         this.ctx.fill();
