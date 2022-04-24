@@ -8,7 +8,7 @@ const mirroredPath = (path: path, gridSize: number): path => {
     return {
         ...path,
         list: path.list.map(v => {
-            if (v.type === "Point") {
+            if (v.type === "Point" || v.type === undefined) {
                 let x = path.mirrorY ? mirrored(v.x, gridSize) : v.x;
                 let y = path.mirrorX ? mirrored(v.y, gridSize) : v.y
                 return {

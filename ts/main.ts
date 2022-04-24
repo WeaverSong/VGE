@@ -215,17 +215,14 @@ const drawShapes = function (render = false) {
 
         if (render || s !== grid.length - 1) continue;
 
-        let firstPoint = shape.list[shape.list.length - 1];
-        let firstMirroredPoint = shapeMirror.list[shapeMirror.list.length - 1];
+        if (tool === toolTypes.Point && shape.list[shape.list.length - 1] !== undefined) {
 
-        if (tool === toolTypes.Point && firstPoint !== undefined) {
-
-            let mirroredEnd = { x: mirroredY ? mirrored(hoveredX, gridSize) : hoveredX, y: mirroredX ? mirrored(hoveredY, gridSize) : hoveredY };
-            drawShapeMap({ list: [firstPoint, { x: hoveredX, y: hoveredY }] });
-            if (mirroredX || mirroredY) drawShapeMap({ list: [firstMirroredPoint, mirroredEnd] });
+            drawShapeMap({list: [...shape.list, { x: hoveredX, y: hoveredY }], mirrorX: mirroredX, mirrorY: mirroredY }, {mirror: mirroredX || mirroredY});
 
         } else if (tool === toolTypes.Arc) {
-            if (tempVars.x1 === undefined) return;
+            if (tempVars.x1 === undefined && shape.list[shape.list.length - 1] !== undefined) {
+                drawShapeMap({list: [...shape.list, { x: hoveredX, y: hoveredY }], mirrorX: mirroredX, mirrorY: mirroredY }, {mirror: mirroredX || mirroredY});
+            }
             else if (tempVars.x2 === undefined) {
                 let angle = Vec2.Angle(hoveredX - tempVars.x1, hoveredY - tempVars.y1);
                 let tempArc: path = {
