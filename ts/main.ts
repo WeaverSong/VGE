@@ -318,9 +318,18 @@ const addBlanks = function () {
 };
 const undo = function () {
 
-    while (grid[grid.length - 1].list.length == 0) grid.pop();
+    while (grid.length > 1 && grid[grid.length - 1].list.length == 0) grid.pop();
 
-    grid[grid.length - 1].list.pop();
+    if (tempVars.x1 === undefined) grid[grid.length - 1].list.pop();
+    else {
+        if (tempVars.x2 !== undefined) {
+            tempVars.x2 = undefined;
+            tempVars.y2 = undefined;
+        } else {
+            tempVars.x1 = undefined;
+            tempVars.y1 = undefined;
+        }
+    }
 
 };
 const addLine = function (x: number, y: number) {
