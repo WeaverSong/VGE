@@ -227,23 +227,25 @@ const drawShapes = function (render = false) {
         } else if (tool === toolTypes.Arc) {
             if (tempVars.x1 === undefined) return;
             else if (tempVars.x2 === undefined) {
-                drawShapeMap({
+                let tempArc: path = {
                     list: [{
                         type: "Arc",
                         x: tempVars.x1,
                         y: tempVars.y1,
                         radius: Vec2.Magnitude({ x: hoveredX - tempVars.x1, y: hoveredY - tempVars.y1 }),
                         startAngle: 0,
-                        endAngle: Math.PI * 2
-                    }]
-                });
-                //if (mirroredX || mirroredY)
+                        endAngle: Math.PI * 2,
+                        startPoint: {x: hoveredX, y: hoveredY},
+                        endPoint: {x: hoveredX, y: hoveredY}
+                    }], mirrorX: mirroredX, mirrorY: mirroredY
+                }
+                drawShapeMap(tempArc, {mirror: mirroredX || mirroredY});
 
             } else {
                 let startAngle = Vec2.Angle(tempVars.x2 - tempVars.x1, tempVars.y2 - tempVars.y1);
                 let endAngle = Vec2.Angle(hoveredX - tempVars.x1, hoveredY - tempVars.y1);
                 if (endAngle === startAngle) endAngle += Math.PI * 2;
-                drawShapeMap({
+                let tempArc: path = {
                     list: [{
                         type: "Arc",
                         x: tempVars.x1,
@@ -251,9 +253,12 @@ const drawShapes = function (render = false) {
                         radius: dist(tempVars.x1, tempVars.y1, tempVars.x2, tempVars.y2),
                         startAngle,
                         endAngle,
-                        antiClockWise: !cc
-                    }]
-                });
+                        antiClockWise: !cc,
+                        startPoint: {x: tempVars.x2, y: tempVars.y2},
+                        endPoint: {x: hoveredX, y: hoveredY}
+                    }], mirrorX: mirroredX, mirrorY: mirroredY
+                };
+                drawShapeMap(tempArc, {mirror: mirroredX || mirroredY});
             }
         };
 
@@ -348,6 +353,7 @@ const addArc = function (x: number, y: number) {
         let endAngle = Vec2.Angle(hoveredX - tempVars.x1, hoveredY - tempVars.y1);
         if (endAngle === startAngle) endAngle += Math.PI * 2;
         gridEnd.list.push({
+            type: "Arc",
             x: tempVars.x1,
             y: tempVars.y1,
             radius: dist(tempVars.x1, tempVars.y1, tempVars.x2, tempVars.y2),
@@ -355,7 +361,6 @@ const addArc = function (x: number, y: number) {
             endAngle,
             startPoint: {x: tempVars.x2, y: tempVars.y2},
             endPoint: {x: hoveredX, y: hoveredY},
-            type: "Arc",
             antiClockWise: !cc
         });
         let endPoint = getEndPoint(gridEnd.list[gridEnd.list.length - 1]);

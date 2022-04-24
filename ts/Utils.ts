@@ -24,16 +24,18 @@ const mirroredPath = (path: path, gridSize: number): path => {
                 let endPoint = { x: path.mirrorY ? mirrored(v.endPoint.x, gridSize) : v.endPoint.x, y: path.mirrorX ? mirrored(v.endPoint.y, gridSize) : v.endPoint.y };
                 let x = path.mirrorY ? mirrored(v.x, gridSize) : v.x;
                 let y = path.mirrorX ? mirrored(v.y, gridSize) : v.y;
+                let startAngle = Vec2.Angle(startPoint.x - x, startPoint.y - y)
+                let endAngle = Vec2.Angle(endPoint.x - x, endPoint.y - y);
                 return {
+                    type: "Arc",
                     x,
                     y,
                     startPoint,
                     endPoint,
                     radius: v.radius,
                     antiClockWise: !v.antiClockWise,
-                    startAngle: Vec2.Angle(startPoint.x - x, startPoint.y - y),
-                    endAngle: Vec2.Angle(endPoint.x - x, endPoint.y - y),
-                    type: "Arc"
+                    startAngle: startAngle == endAngle ? 0 : startAngle,
+                    endAngle: startAngle == endAngle ? Math.PI * 2 : endAngle
                 }
             }
         })
