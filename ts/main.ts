@@ -11,7 +11,7 @@ const defaultRenderSettings: RenderSettings = {
     background: "#00000000",
     line: {
         width: 15,
-        cap: "square",
+        cap: "round",
         join: "round"
     },
     shadow: {
