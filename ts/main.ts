@@ -168,12 +168,13 @@ const drawShapeMap = function (shape: path, options: {render?: boolean, forceClo
                 if (v.type === "Arc") return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25, radius: v.radius * spacing }
             }),
             settings);
+
         CR.DrawShape(
             shape.list.map(v => {
                 if (v.type === "Point" || v.type === undefined) return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 };
                 if (v.type === "Arc") return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25, radius: v.radius * spacing }
             }),
-            {...settings, shadow: {...settings.shadow, color: "#00000000"}});
+            {...settings, shadow: {blur: 0}});
     } else {
         CR.DrawShape(
             shape.list.map(v => {
