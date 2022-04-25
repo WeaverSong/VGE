@@ -148,7 +148,7 @@ const getEndPoint = function (listNode: listNode) {
     if (listNode.endPoint) return listNode.endPoint;
     else return listNode;
 }
-const drawShapeMap = function (shape: path, options: {render?: boolean, forceClose?: boolean, mirror?: boolean} = {}) {
+const drawShapeMap = function (shape: path, options: {render?: boolean, forceClose?: boolean, mirror?: boolean, noShadow?: boolean} = {}) {
 
     let settings: PartialRendererSettings = options.render ? free(renderSettings) : {
         fill: "#00000000",
@@ -162,14 +162,7 @@ const drawShapeMap = function (shape: path, options: {render?: boolean, forceClo
     };
     if (options.forceClose) settings.noClose = false;
 
-    if (options.render) {
-        CR.DrawShape(
-            shape.list.map(v => {
-                if (v.type === "Point" || v.type === undefined) return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 };
-                if (v.type === "Arc") return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25, radius: v.radius * spacing }
-            }),
-            settings);
-
+    if (options.noShadow) {
         CR.DrawShape(
             shape.list.map(v => {
                 if (v.type === "Point" || v.type === undefined) return { ...v, x: v.x * spacing + 25, y: v.y * spacing + 25 };
@@ -189,9 +182,9 @@ const drawShapeMap = function (shape: path, options: {render?: boolean, forceClo
         drawShapeMap(mirroredPath(shape, gridSize), {...options, mirror: false});
     }
 };
-const drawShapes = function (render = false) {
+const drawShapes = function (render = false, noShadow = false) {
 
-    if(render) {
+    if(render && !noShadow) {
         CR.DrawShape([{x: 0, y: 0}, {x: CR.settings.size.width, y: 0}, {x: CR.settings.size.width, y: CR.settings.size.height}, {x: 0, y: CR.settings.size.height}], {fill: renderSettings.background, stroke: "#00000000"})
     }
 
@@ -207,7 +200,7 @@ const drawShapes = function (render = false) {
 
             if (!shape.mirrorX && !shape.mirrorY) {
 
-                drawShapeMap(shape, {render, forceClose});
+                drawShapeMap(shape, {render, forceClose, noShadow});
 
             } else if ((shape.mirrorX || shape.mirrorY)) {
                 let end = shape.list[shape.list.length - 1];
@@ -225,7 +218,7 @@ const drawShapes = function (render = false) {
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
                     && (tempShape.list[0].startPoint.y == tempShape.list[tempShape.list.length-1].endPoint.y)
 
-                    drawShapeMap(tempShape, {render, forceClose});
+                    drawShapeMap(tempShape, {render, forceClose, noShadow});
 
                 } else if (shape.list[0].x === shapeMirror.list[0].x && shape.list[0].y === shapeMirror.list[0].y) {
                     let tempShape: path = free(shape);
@@ -238,12 +231,12 @@ const drawShapes = function (render = false) {
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
                     && (tempShape.list[0].startPoint.y == tempShape.list[tempShape.list.length-1].endPoint.y)
 
-                    drawShapeMap(tempShapeMirror, {render, forceClose});
+                    drawShapeMap(tempShapeMirror, {render, forceClose, noShadow});
                 } else {
-                    drawShapeMap(shape, {render, forceClose, mirror: true});
+                    drawShapeMap(shape, {render, forceClose, mirror: true, noShadow});
                 }
             } else {
-                drawShapeMap(shape, {render, forceClose, mirror: true});
+                drawShapeMap(shape, {render, forceClose, mirror: true, noShadow});
             };
         }
 
@@ -295,6 +288,9 @@ const drawShapes = function (render = false) {
         };
 
     }
+
+    if (render && !noShadow) drawShapes(true, true)
+
 };
 const drawGrid = function (gridSize: number) {
     CR.Reset();
