@@ -563,7 +563,11 @@ document.getElementById("tool-arc-between").onclick = () => {
     tool = toolTypes.arcBetween;
     tempVars = {};
 }
-document.getElementById("export-menu").onclick = () => overlay.visible = true;
+document.getElementById("export-menu").onclick = () => {
+    CR.Reset();
+    drawLayers(true);
+    navigator.clipboard.writeText(CR.GetDataURL());
+}
 document.getElementById("tab-fill").onclick = () => overlay.topbar.activeTab = "fill";
 document.getElementById("tab-stroke").onclick = () => overlay.topbar.activeTab = "stroke";
 document.getElementById("tab-shadow").onclick = () => overlay.topbar.activeTab = "shadow";
