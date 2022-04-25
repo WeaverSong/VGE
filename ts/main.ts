@@ -237,7 +237,7 @@ const drawShapes = function (render = false, noShadow = false) {
                 } else if (shape.list[0].x === shapeMirror.list[0].x && shape.list[0].y === shapeMirror.list[0].y) {
                     let tempShape: path = free(shape);
                     let tempShapeMirror: path = free(shapeMirror);
-                    for (let i = tempShape.list.length - 1; i > 0; i--) {
+                    for (let i = 0; i < tempShape.list.length; i++) {
                         if (tempShape.list[i].type === "Arc") tempShapeMirror.list.splice(0, 0, reverseArc(<listNode & {type: "Arc"}>tempShape.list[i]));
                         else tempShapeMirror.list.splice(0, 0, tempShape.list[i])
                     };
