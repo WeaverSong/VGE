@@ -43,4 +43,15 @@ const mirroredPath = (path: path, gridSize: number): path => {
 
 };
 
+const reverseArc = (arc: listNode & {type: "Arc"}): listNode => ({
+    type: "Arc",
+    x: arc.x, y: arc.y,
+    startPoint: arc.endPoint,
+    endPoint: arc.startPoint,
+    radius: arc.radius,
+    startAngle: arc.endAngle,
+    endAngle: arc.startAngle,
+    antiClockWise: !arc.antiClockWise
+})
+
 const free = (obj: object) => JSON.parse(JSON.stringify(obj));

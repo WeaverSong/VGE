@@ -197,7 +197,8 @@ const drawShapes = function (render = false) {
                     let tempShape: path = free(shape);
                     let tempShapeMirror: path = free(shapeMirror); tempShapeMirror.list.pop();
                     for (let i = tempShapeMirror.list.length - 1; i >= 0; i--) {
-                        tempShape.list.push(tempShapeMirror.list[i]);
+                        if (tempShapeMirror.list[i].type === "Arc") tempShape.list.push(reverseArc(<listNode & {type: "Arc"}>tempShapeMirror.list[i]))
+                        else tempShape.list.push(tempShapeMirror.list[i]);
                     };
 
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
@@ -209,7 +210,8 @@ const drawShapes = function (render = false) {
                     let tempShape: path = free(shape);
                     let tempShapeMirror: path = free(shapeMirror);
                     for (let i = tempShape.list.length - 1; i > 0; i--) {
-                        tempShapeMirror.list.splice(0, 0, tempShape.list[i]);
+                        if (tempShape.list[i].type === "Arc") tempShapeMirror.list.splice(0, 0, reverseArc(<listNode & {type: "Arc"}>tempShape.list[i]));
+                        else tempShapeMirror.list.splice(0, 0, tempShape.list[i])
                     };
 
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
