@@ -188,7 +188,7 @@ const drawShapes = function (render = false) {
 
                 drawShapeMap(shape, {render, forceClose});
 
-            } else if (s !== grid.length - 1 && (shape.mirrorX || shape.mirrorY)) {
+            } else if ((shape.mirrorX || shape.mirrorY)) {
                 let end = shape.list[shape.list.length - 1];
                 let endMirror = shapeMirror.list[shapeMirror.list.length - 1];
 
@@ -205,6 +205,17 @@ const drawShapes = function (render = false) {
 
                     drawShapeMap(tempShape, {render, forceClose});
 
+                } else if (shape.list[0].x === shapeMirror.list[0].x && shape.list[0].y === shapeMirror.list[0].y) {
+                    let tempShape: path = free(shape);
+                    let tempShapeMirror: path = free(shapeMirror);
+                    for (let i = tempShape.list.length - 1; i > 0; i--) {
+                        tempShapeMirror.list.splice(0, 0, tempShape.list[i]);
+                    };
+
+                    let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
+                    && (tempShape.list[0].startPoint.y == tempShape.list[tempShape.list.length-1].endPoint.y)
+
+                    drawShapeMap(tempShapeMirror, {render, forceClose});
                 } else {
                     drawShapeMap(shape, {render, forceClose, mirror: true});
                 }
