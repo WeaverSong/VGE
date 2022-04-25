@@ -6,9 +6,10 @@ const toolTypes = {
 
 declare const Picker;
 
-let renderSettings: PartialRendererSettings = {
+let renderSettings: PartialRendererSettings & {background: string} = {
     fill: "#ffffff00",
     stroke: "#000000",
+    background: "#00000000",
     line: {
         width: 15,
         cap: "square",
@@ -189,6 +190,11 @@ const drawShapeMap = function (shape: path, options: {render?: boolean, forceClo
     }
 };
 const drawShapes = function (render = false) {
+
+    if(render) {
+        CR.DrawShape([{x: 0, y: 0}, {x: CR.settings.size.width, y: 0}, {x: CR.settings.size.width, y: CR.settings.size.height}, {x: 0, y: CR.settings.size.height}], {fill: renderSettings.background, stroke: "#00000000"})
+    }
+
     for (let s = 0; s < grid.length; s++) {
 
         let shape = grid[s];
