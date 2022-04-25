@@ -26,8 +26,8 @@ const addLayer = function () {
     const id = nextLayerId++;
     let newLayer: HTMLDivElement = html.div({className: "layer", eventListeners: {click: () => setActiveLayer(id)}},
         html.div({className: "layer-nav"},
-            html.button({className: "layer-nav-up"}, "/\\"),
-            html.button({className: "layer-nav-down"}, "\\/")
+            html.button({className: "layer-nav-up", attributes: id === 0 ? {disabled: true} : {}, eventListeners: {click: () => {setActiveLayer(id); moveLayer(id, -1)}}}, "/\\"),
+            html.button({className: "layer-nav-down", attributes: {disabled: true}, eventListeners: {click: () => {setActiveLayer(id); moveLayer(id, 1)}}}, "\\/")
         ),
         html.p({className: "layer-label"},
             `Layer ${layers.length}`
@@ -37,6 +37,8 @@ const addLayer = function () {
         )
     )
     document.getElementById("layer-list").appendChild(newLayer);
+
+    if (layers.length > 0) layers[layers.length - 1].html.getElementsByClassName("layer-nav")[0].getElementsByClassName("layer-nav-down")[0].toggleAttribute("disabled", false);
     
     layers.push({
         html: newLayer,
@@ -45,17 +47,44 @@ const addLayer = function () {
         id
     })
 };
+const getLayerIndex = function (layerId: number): number {
+    let index = layers.findIndex(v => v.id === layerId);
+    if (index === -1) throw new Error(`No layer with id ${layerId}`)
+
+    return index;
+}
 const setActiveLayer = function (layerId: number) {
     layers[activeLayer].html.id = "";
 
-    activeLayer = layers.findIndex(v => v.id === layerId);
-    if (activeLayer === -1) throw new Error(`No layer with id ${layerId}`)
+    activeLayer = getLayerIndex(layerId);
     layers[activeLayer].html.id = "active-layer";
 
     grid = layers[activeLayer].paths;
     renderSettings = layers[activeLayer].renderSettings;
     grid[grid.length - 1].mirrorX = mirroredX;
     grid[grid.length - 1].mirrorY = mirroredY;
+}
+const moveLayer = function (layerId: number, change: number) {
+    let index = getLayerIndex(layerId);
+
+    let layer = layers.splice(index, 1)[0];
+    layers.splice(index + change, 0, layer);
+
+    const layerlist = document.getElementById("layer-list");
+    layers.forEach(l => layerlist.removeChild(l.html));
+    layers.forEach(l => layerlist.appendChild(l.html));
+
+    for (let i = 0; i < layers.length; i++) {
+        let eleUp = layers[i].html.getElementsByClassName("layer-nav")[0].getElementsByClassName("layer-nav-up")[0];
+        let eleDown = layers[i].html.getElementsByClassName("layer-nav")[0].getElementsByClassName("layer-nav-down")[0];
+        
+        if (i === 0) eleUp.toggleAttribute("disabled", true)
+        else eleUp.toggleAttribute("disabled", false);
+
+        if (i === layers.length - 1) eleDown.toggleAttribute("disabled", true);
+        else eleDown.toggleAttribute("disabled", false);
+    }
+
 }
 
 type RenderSettings = PartialRendererSettings & {background: string};
