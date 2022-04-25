@@ -62,6 +62,11 @@ let overlay = {
                 get active() {return overlay.topbar._activeTab == "shadow"},
                 set active(value) {if(!value){return} overlay.topbar.activeTab = "shadow"},
                 html: document.getElementById("tab-shadow")
+            },
+            background: {
+                get active() {return overlay.topbar._activeTab == "background"},
+                set active(value) {if(!value){return} overlay.topbar.activeTab = "background"},
+                html: document.getElementById("tab-background")
             }
         }
     },
@@ -92,6 +97,15 @@ let overlay = {
                 popup: false,
                 color: "#000000",
                 onChange: color => renderSettings.shadow.color = color.hex
+            })
+        },
+        background: {
+            html: document.getElementById("main-background"),
+            colorPicker: new Picker({
+                parent: document.getElementById("main-background"),
+                popup: false,
+                color: "#00000000",
+                onChange: color => {renderSettings.background = color.hex}
             })
         }
     }
@@ -460,6 +474,7 @@ document.getElementById("export-menu").onclick = () => overlay.visible = true;
 document.getElementById("tab-fill").onclick = () => overlay.topbar.activeTab = "fill";
 document.getElementById("tab-stroke").onclick = () => overlay.topbar.activeTab = "stroke";
 document.getElementById("tab-shadow").onclick = () => overlay.topbar.activeTab = "shadow";
+document.getElementById("tab-background").onclick = () => overlay.topbar.activeTab = "background";
 document.getElementById("resume").onclick = () => overlay.visible = false;
 document.getElementById("export").onclick = () => {
     overlay.visible = false;
