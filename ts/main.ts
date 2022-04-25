@@ -30,10 +30,19 @@ const addLayer = function () {
             html.button({className: "layer-nav-down", attributes: {disabled: true}, eventListeners: {click: () => {setActiveLayer(id); moveLayer(id, 1)}}}, "\\/")
         ),
         html.p({className: "layer-label"},
-            `Layer ${layers.length}`
+            `Layer ${id}`
         ),
-        html.button({className: "layer-render-button", eventListeners: {click: () => {setActiveLayer(id); overlay.visible = true;}}},
+        html.button({className: "layer-render-button", eventListeners: {click: (e:MouseEvent) => {renderSettings = layers[getLayerIndex(id)].renderSettings; overlay.visible = true; e.cancelBubble = true;}}},
             "R"
+        ),
+        html.button({className: "layer-render-button", eventListeners: {click: (e:MouseEvent) => {
+            e.cancelBubble = true;
+            if (layers.length == 1) return;
+            let nextLayer = getLayerIndex(id) - 1; if (nextLayer == -1) nextLayer = 1;
+            setActiveLayer(layers[nextLayer].id);
+            deleteLayer(id);
+            }}},
+            "D"
         )
     )
     document.getElementById("layer-list").appendChild(newLayer);
@@ -86,6 +95,11 @@ const moveLayer = function (layerId: number, change: number) {
     }
 
 }
+const deleteLayer = function (layerId: number) {
+    const index = getLayerIndex(layerId);
+    document.getElementById("layer-list").removeChild(layers[index].html);
+    layers.splice(index, 1);
+};
 
 let nextLayerId = 0;
 let layers: {paths: path[], renderSettings: RenderSettings, html: HTMLDivElement, id: number, hidden?: boolean}[] = []
@@ -115,7 +129,7 @@ let overlay = {
         this.mainboxes.stroke.colorPicker.setColor(renderSettings.stroke);
         this.mainboxes.shadow.colorPicker.setColor(renderSettings.shadow.color);
         this.mainboxes.background.colorPicker.setColor(renderSettings.background);
-        
+
     },
     topbar: {
         html: document.getElementById("topbar"),
@@ -572,6 +586,7 @@ document.getElementById("tab-stroke").onclick = () => overlay.topbar.activeTab =
 document.getElementById("tab-shadow").onclick = () => overlay.topbar.activeTab = "shadow";
 document.getElementById("tab-background").onclick = () => overlay.topbar.activeTab = "background";
 document.getElementById("resume").onclick = () => overlay.visible = false;
+document.getElementById("new-layer").onclick = () => addLayer();
 document.getElementById("export").onclick = () => {
     overlay.visible = false;
     CR.Reset();
