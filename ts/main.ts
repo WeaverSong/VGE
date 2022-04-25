@@ -381,10 +381,12 @@ const drawShapes = function (grid: path[], options: {render?: boolean, noShadow?
 
     }
 
-};
-const drawLayers = function (render = false, noShadow = false) {
+    if (options.render && !options.noShadow) drawShapes(grid, {...options, noShadow: true});
 
-    if(render && !noShadow) {
+};
+const drawLayers = function (render = false) {
+
+    if(render) {
         CR.DrawShape([{x: 0, y: 0}, {x: CR.settings.size.width, y: 0}, {x: CR.settings.size.width, y: CR.settings.size.height}, {x: 0, y: CR.settings.size.height}], {fill: renderSettings.background, stroke: "#00000000"})
     }
 
@@ -392,10 +394,10 @@ const drawLayers = function (render = false, noShadow = false) {
         let layer = layers[i];
         if (layer.hidden) continue;
 
-        drawShapes(layer.paths, {render, noShadow, renderSettings: layer.renderSettings});
+        drawShapes(layer.paths, {render, renderSettings: layer.renderSettings});
     }
 
-    if (render && !noShadow) drawLayers(true, true);
+    
 };
 const drawGrid = function (gridSize: number) {
     CR.Reset();
