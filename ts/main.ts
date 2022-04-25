@@ -32,7 +32,7 @@ const addLayer = function () {
         html.p({className: "layer-label"},
             `Layer ${layers.length}`
         ),
-        html.button({className: "layer-render-button"},
+        html.button({className: "layer-render-button", eventListeners: {click: () => {setActiveLayer(id); overlay.visible = true;}}},
             "R"
         )
     )
@@ -53,7 +53,9 @@ const setActiveLayer = function (layerId: number) {
     layers[activeLayer].html.id = "active-layer";
 
     grid = layers[activeLayer].paths;
-
+    renderSettings = layers[activeLayer].renderSettings;
+    grid[grid.length - 1].mirrorX = mirroredX;
+    grid[grid.length - 1].mirrorY = mirroredY;
 }
 
 type RenderSettings = PartialRendererSettings & {background: string};
@@ -76,7 +78,17 @@ let overlay = {
     html: document.getElementById("overlay"),
     _visible: false,
     get visible() {return this._visible},
-    set visible(value: boolean) {this._visible = value; this.html.className = !value ? "gone" : ""; preview = value},
+    set visible(value: boolean) {
+        this._visible = value;
+        this.html.className = !value ? "gone" : "";
+        preview = value;
+    
+        this.mainboxes.fill.colorPicker.setColor(renderSettings.fill);
+        this.mainboxes.stroke.colorPicker.setColor(renderSettings.stroke);
+        this.mainboxes.shadow.colorPicker.setColor(renderSettings.shadow.color);
+        this.mainboxes.background.colorPicker.setColor(renderSettings.background);
+
+    },
     topbar: {
         html: document.getElementById("topbar"),
         _activeTab: "fill",
