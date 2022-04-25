@@ -16,7 +16,7 @@ const defaultRenderSettings: RenderSettings = {
     },
     shadow: {
         blur: 15,
-        color: "#01f056",
+        color: "#00000000",
         x: 0,
         y: 0
     },
@@ -87,7 +87,6 @@ const moveLayer = function (layerId: number, change: number) {
 
 }
 
-type RenderSettings = PartialRendererSettings & {background: string};
 let nextLayerId = 0;
 let layers: {paths: path[], renderSettings: RenderSettings, html: HTMLDivElement, id: number, hidden?: boolean}[] = []
 addLayer();
@@ -116,7 +115,7 @@ let overlay = {
         this.mainboxes.stroke.colorPicker.setColor(renderSettings.stroke);
         this.mainboxes.shadow.colorPicker.setColor(renderSettings.shadow.color);
         this.mainboxes.background.colorPicker.setColor(renderSettings.background);
-
+        
     },
     topbar: {
         html: document.getElementById("topbar"),
@@ -159,7 +158,7 @@ let overlay = {
             colorPicker: new Picker({
                 parent: document.getElementById("main-fill"),
                 popup: false,
-                color: "#ffffff00",
+                color: defaultRenderSettings.fill,
                 onChange: color => {renderSettings.fill = color.hex}
             })
         },
@@ -168,7 +167,7 @@ let overlay = {
             colorPicker: new Picker({
                 parent: document.getElementById("stroke-color"),
                 popup: false,
-                color: "#000000",
+                color: defaultRenderSettings.stroke,
                 onChange: color => renderSettings.stroke = color.hex
             })
         },
@@ -177,7 +176,7 @@ let overlay = {
             colorPicker: new Picker({
                 parent: document.getElementById("shadow-color"),
                 popup: false,
-                color: "#000000",
+                color: defaultRenderSettings.shadow.color,
                 onChange: color => renderSettings.shadow.color = color.hex
             })
         },
@@ -186,7 +185,7 @@ let overlay = {
             colorPicker: new Picker({
                 parent: document.getElementById("main-background"),
                 popup: false,
-                color: "#00000000",
+                color: defaultRenderSettings.background,
                 onChange: color => {renderSettings.background = color.hex}
             })
         }

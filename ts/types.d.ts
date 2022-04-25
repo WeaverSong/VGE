@@ -7,3 +7,4 @@ interface path {
     mirrorX?: boolean,
     mirrorY?: boolean
 }
+type RenderSettings = PartialRendererSettings & {background: string};
