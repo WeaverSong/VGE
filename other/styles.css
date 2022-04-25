@@ -101,6 +101,49 @@ body {
     padding: 10px;
 }
 
+#layer-list {
+    background-color: azure;
+    border: 1px solid black;
+    box-shadow: 1px 1px;
+    margin: 15px;
+    padding: 10px;
+    width: 80%;
+}
+
+.layer {
+    width: 100%;
+    height: 50px;
+    background-color: aliceblue;
+    border: 1px solid black;
+    display: flex;
+    margin-top: 5px;
+}
+
+#active-layer {
+    background-color: aquamarine;
+}
+
+.layer-nav {
+    height: 100%;
+    width: 15%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.layer-label {
+    font-size: larger;
+    margin: 0;
+    margin:auto;
+}
+
+.layer-render-button {
+    margin: 5px;
+}
+
+
 .bar {
     padding: 15px;
     background-color: aliceblue;
@@ -114,6 +157,12 @@ body {
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: flex-start;
+}
+
+#bar-right {
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
 }
 
 .bar > button {

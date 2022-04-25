@@ -5,8 +5,7 @@ const toolTypes = {
 };
 
 declare const Picker;
-
-let renderSettings: PartialRendererSettings & {background: string} = {
+const defaultRenderSettings: RenderSettings = {
     fill: "#ffffff00",
     stroke: "#000000",
     background: "#00000000",
@@ -22,7 +21,49 @@ let renderSettings: PartialRendererSettings & {background: string} = {
         y: 0
     },
     noClose: true
+}
+const addLayer = function () {
+    const id = nextLayerId++;
+    let newLayer: HTMLDivElement = html.div({className: "layer", eventListeners: {click: () => setActiveLayer(id)}},
+        html.div({className: "layer-nav"},
+            html.button({className: "layer-nav-up"}, "/\\"),
+            html.button({className: "layer-nav-down"}, "\\/")
+        ),
+        html.p({className: "layer-label"},
+            `Layer ${layers.length}`
+        ),
+        html.button({className: "layer-render-button"},
+            "R"
+        )
+    )
+    document.getElementById("layer-list").appendChild(newLayer);
+    
+    layers.push({
+        html: newLayer,
+        paths: [{list: []}],
+        renderSettings: free(defaultRenderSettings),
+        id
+    })
 };
+const setActiveLayer = function (layerId: number) {
+    layers[activeLayer].html.id = "";
+
+    activeLayer = layers.findIndex(v => v.id === layerId);
+    if (activeLayer === -1) throw new Error(`No layer with id ${layerId}`)
+    layers[activeLayer].html.id = "active-layer";
+
+    grid = layers[activeLayer].paths;
+
+}
+
+type RenderSettings = PartialRendererSettings & {background: string};
+let nextLayerId = 0;
+let layers: {paths: path[], renderSettings: RenderSettings, html: HTMLDivElement, id: number, hidden?: boolean}[] = []
+addLayer();
+layers[0].html.id = "active-layer"
+let activeLayer = 0;
+
+let renderSettings: RenderSettings = layers[activeLayer].renderSettings;
 let EM = new EventManager([{ name: "click" }, { name: "keyUp" }, { name: "keydown" }]);
 let canvas = document.getElementById("canvas") as HTMLCanvasElement;
 let CR = new CanvasRenderer({
@@ -111,7 +152,7 @@ let overlay = {
     }
 };
 
-let grid: path[] = [{ list: [] }];
+let grid: path[] = layers[activeLayer].paths;
 
 let gridSize = 41;
 let spacing = (CR.size.height - 25) / gridSize;
@@ -162,9 +203,9 @@ const getEndPoint = function (listNode: listNode) {
     if (listNode.endPoint) return listNode.endPoint;
     else return listNode;
 }
-const drawShapeMap = function (shape: path, options: {render?: boolean, forceClose?: boolean, mirror?: boolean, noShadow?: boolean} = {}) {
+const drawShapeMap = function (shape: path, options: {render?: boolean, forceClose?: boolean, mirror?: boolean, noShadow?: boolean, renderSettings?: RenderSettings} = {}) {
 
-    let settings: PartialRendererSettings = options.render ? free(renderSettings) : {
+    let settings: PartialRendererSettings = options.render ? free(options.renderSettings) : {
         fill: "#00000000",
         stroke: "#000000",
         line: {
@@ -196,11 +237,7 @@ const drawShapeMap = function (shape: path, options: {render?: boolean, forceClo
         drawShapeMap(mirroredPath(shape, gridSize), {...options, mirror: false});
     }
 };
-const drawShapes = function (render = false, noShadow = false) {
-
-    if(render && !noShadow) {
-        CR.DrawShape([{x: 0, y: 0}, {x: CR.settings.size.width, y: 0}, {x: CR.settings.size.width, y: CR.settings.size.height}, {x: 0, y: CR.settings.size.height}], {fill: renderSettings.background, stroke: "#00000000"})
-    }
+const drawShapes = function (grid: path[], options: {render?: boolean, noShadow?: boolean, renderSettings?: RenderSettings}) {
 
     for (let s = 0; s < grid.length; s++) {
 
@@ -214,7 +251,7 @@ const drawShapes = function (render = false, noShadow = false) {
 
             if (!shape.mirrorX && !shape.mirrorY) {
 
-                drawShapeMap(shape, {render, forceClose, noShadow});
+                drawShapeMap(shape, {...options, forceClose});
 
             } else if ((shape.mirrorX || shape.mirrorY)) {
                 let end = shape.list[shape.list.length - 1];
@@ -232,7 +269,7 @@ const drawShapes = function (render = false, noShadow = false) {
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
                     && (tempShape.list[0].startPoint.y == tempShape.list[tempShape.list.length-1].endPoint.y)
 
-                    drawShapeMap(tempShape, {render, forceClose, noShadow});
+                    drawShapeMap(tempShape, {...options, forceClose});
 
                 } else if (shape.list[0].x === shapeMirror.list[0].x && shape.list[0].y === shapeMirror.list[0].y) {
                     let tempShape: path = free(shape);
@@ -245,16 +282,16 @@ const drawShapes = function (render = false, noShadow = false) {
                     let forceClose = (tempShape.list[0].startPoint.x == tempShape.list[tempShape.list.length-1].endPoint.x)
                     && (tempShape.list[0].startPoint.y == tempShape.list[tempShape.list.length-1].endPoint.y)
 
-                    drawShapeMap(tempShapeMirror, {render, forceClose, noShadow});
+                    drawShapeMap(tempShapeMirror, {...options, forceClose});
                 } else {
-                    drawShapeMap(shape, {render, forceClose, mirror: true, noShadow});
+                    drawShapeMap(shape, {...options, forceClose, mirror: true});
                 }
             } else {
-                drawShapeMap(shape, {render, forceClose, mirror: true, noShadow});
+                drawShapeMap(shape, {...options, forceClose, mirror: true});
             };
         }
 
-        if (render || s !== grid.length - 1) continue;
+        if (options.render || s !== grid.length - 1) continue;
 
         if (tool === toolTypes.Point && shape.list[shape.list.length - 1] !== undefined) {
 
@@ -303,12 +340,25 @@ const drawShapes = function (render = false, noShadow = false) {
 
     }
 
-    if (render && !noShadow) drawShapes(true, true)
+};
+const drawLayers = function (render = false, noShadow = false) {
 
+    if(render && !noShadow) {
+        CR.DrawShape([{x: 0, y: 0}, {x: CR.settings.size.width, y: 0}, {x: CR.settings.size.width, y: CR.settings.size.height}, {x: 0, y: CR.settings.size.height}], {fill: renderSettings.background, stroke: "#00000000"})
+    }
+
+    for (let i = 0; i < layers.length; i++) {
+        let layer = layers[i];
+        if (layer.hidden) continue;
+
+        drawShapes(layer.paths, {render, noShadow, renderSettings: layer.renderSettings});
+    }
+
+    if (render && !noShadow) drawLayers(true, true);
 };
 const drawGrid = function (gridSize: number) {
     CR.Reset();
-    if (preview) return drawShapes(true);
+    if (preview) return drawLayers(true);
 
     let mx = hoveredX, my = hoveredY;
     if (mirroredY) mx = (((gridSize - 1) / 2 - hoveredX) * 2 + hoveredX);
@@ -349,7 +399,7 @@ const drawGrid = function (gridSize: number) {
         });
     }
 
-    drawShapes();
+    drawLayers();
 
 };
 const addBlanks = function () {
@@ -431,7 +481,7 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
     
         } else if (kv.key === " ") {
             CR.Reset();
-            drawShapes(true);
+            drawLayers(true);
             navigator.clipboard.writeText(CR.GetDataURL());
             preview = false;
         } else if (kv.key === "x") {
@@ -479,7 +529,7 @@ document.getElementById("resume").onclick = () => overlay.visible = false;
 document.getElementById("export").onclick = () => {
     overlay.visible = false;
     CR.Reset();
-    drawShapes(true);
+    drawLayers(true);
     navigator.clipboard.writeText(CR.GetDataURL());
 };
 (document.getElementById("stroke-size-slider") as HTMLInputElement).addEventListener("mousemove", function ()
