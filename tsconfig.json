@@ -3,9 +3,11 @@
     "compilerOptions": {
         "outDir": "./js",
         "target": "ESNext",
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "allowJs": true
     },
     "include": [
-        "./ts/**/*.ts"
+        "./ts/**/*.ts",
+        "./ts/**/*.js"
     ]
 }
