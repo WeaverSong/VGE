@@ -72,6 +72,8 @@ const setActiveLayer = function (layerId: number) {
     renderSettings = layers[activeLayer].renderSettings;
     grid[grid.length - 1].mirrorX = mirroredX;
     grid[grid.length - 1].mirrorY = mirroredY;
+
+    overlay.update();
 }
 const moveLayer = function (layerId: number, change: number) {
     let index = getLayerIndex(layerId);
@@ -104,8 +106,8 @@ const deleteLayer = function (layerId: number) {
 let nextLayerId = 0;
 let layers: {paths: path[], renderSettings: RenderSettings, html: HTMLDivElement, id: number, hidden?: boolean}[] = []
 addLayer();
-layers[0].html.id = "active-layer"
 let activeLayer = 0;
+layers[activeLayer].html.id = "active-layer"
 
 let renderSettings: RenderSettings = layers[activeLayer].renderSettings;
 let EM = new EventManager([{ name: "click" }, { name: "keyUp" }, { name: "keydown" }]);
@@ -119,16 +121,19 @@ let CR = new CanvasRenderer({
 let overlay = {
     html: document.getElementById("overlay"),
     _visible: false,
+    update: function() {
+        this.mainboxes.fill.colorPicker.setColor(renderSettings.fill);
+        this.mainboxes.stroke.colorPicker.setColor(renderSettings.stroke);
+        this.mainboxes.shadow.colorPicker.setColor(renderSettings.shadow.color);
+        this.mainboxes.background.colorPicker.setColor(renderSettings.background);
+    },
     get visible() {return this._visible},
     set visible(value: boolean) {
         this._visible = value;
         this.html.className = !value ? "gone" : "";
         preview = value;
     
-        this.mainboxes.fill.colorPicker.setColor(renderSettings.fill);
-        this.mainboxes.stroke.colorPicker.setColor(renderSettings.stroke);
-        this.mainboxes.shadow.colorPicker.setColor(renderSettings.shadow.color);
-        this.mainboxes.background.colorPicker.setColor(renderSettings.background);
+        this.update();
 
     },
     topbar: {
@@ -307,7 +312,7 @@ const drawShapes = function (grid: path[], options: {render?: boolean, noShadow?
 
                 drawShapeMap(shape, {...options, forceClose});
 
-            } else if ((shape.mirrorX || shape.mirrorY)) {
+            } else if (shape.mirrorX || shape.mirrorY) {
                 let end = shape.list[shape.list.length - 1];
                 let endMirror = shapeMirror.list[shapeMirror.list.length - 1];
 
@@ -327,7 +332,7 @@ const drawShapes = function (grid: path[], options: {render?: boolean, noShadow?
 
                 } else if (shape.list[0].x === shapeMirror.list[0].x && shape.list[0].y === shapeMirror.list[0].y) {
                     let tempShape: path = free(shape);
-                    let tempShapeMirror: path = free(shapeMirror);
+                    let tempShapeMirror: path = free(shapeMirror); tempShapeMirror.list.splice(0, 1);
                     for (let i = 0; i < tempShape.list.length; i++) {
                         if (tempShape.list[i].type === "Arc") tempShapeMirror.list.splice(0, 0, reverseArc(<listNode & {type: "Arc"}>tempShape.list[i]));
                         else tempShapeMirror.list.splice(0, 0, tempShape.list[i])
@@ -562,7 +567,7 @@ EM.subscribe(grid, "keydown", (kv: KeyboardEvent) => {
             preview = true;
         }
     }
-})
+});
 
 document.getElementById("tool-line").onclick = () => {
     tool = toolTypes.Point;
