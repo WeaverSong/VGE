@@ -463,6 +463,11 @@ const drawGrid = function (gridSize: number) {
     drawLayers();
 
 };
+const exportRender = function () {
+    CR.Reset();
+    drawLayers(true);
+    navigator.clipboard.writeText(CR.GetDataURL());
+};
 const addBlanks = function () {
 
     grid.push({ list: [], mirrorX: mirroredX, mirrorY: mirroredY });
@@ -541,9 +546,7 @@ EM.subscribe(grid, "keyUp", (kv: KeyboardEvent) => {
             undo();
     
         } else if (kv.key === " ") {
-            CR.Reset();
-            drawLayers(true);
-            navigator.clipboard.writeText(CR.GetDataURL());
+            exportRender();
             preview = false;
         } else if (kv.key === "x") {
             mirroredX = !mirroredX;
@@ -594,9 +597,7 @@ document.getElementById("resume").onclick = () => overlay.visible = false;
 document.getElementById("new-layer").onclick = () => addLayer();
 document.getElementById("export").onclick = () => {
     overlay.visible = false;
-    CR.Reset();
-    drawLayers(true);
-    navigator.clipboard.writeText(CR.GetDataURL());
+    exportRender();
 };
 (document.getElementById("stroke-size-slider") as HTMLInputElement).addEventListener("mousemove", function ()
 {
