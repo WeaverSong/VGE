@@ -7,6 +7,7 @@
     <title>VGE</title>
     <link rel="stylesheet" href="styles.css">
     <script src="../js/vanilla-picker.min.js"></script>
+    <script src="../js/FileSaver.js"></script>
 
 </head>
 <body>
@@ -15,7 +16,7 @@
         <div id="leftBar" class="bar">
             <button id="tool-line">Line</button>
             <button id="tool-arc">Arc</button>
-            <button id="tool-arc-between">Arc between</button>
+            <button id="tool-edit">Edit</button>
         </div>
         <div id="container">
             <canvas id="canvas"></canvas>
@@ -65,9 +66,16 @@
             </div>
         </div>
         <div id="bar-right" class="bar">
-            <button id="export-menu">Export</button>
-            <div id="layer-list" class="flex-down ui-container"></div>
-            <button id="new-layer">New layer</button>
+            <button id="export-menu" class="btn">Export</button>
+            <div id="layer-list-container">
+                <div id="layer-list" class="flex-down ui-container"></div>
+                <button id="new-layer">New layer</button>
+            </div>
+            <div id="save-load" class="flex-down ui-container">
+                <button id="save" class="btn">Save</button>
+                <label for="load" class="btn" id="load-label">Load</label>
+                <input type="file" id="load" name="load">
+            </div>
         </div>
     </div>
 

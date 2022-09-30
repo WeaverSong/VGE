@@ -1,7 +1,7 @@
 const toolTypes = {
     "Point": "Point",
     "Arc": "Arc",
-    "arcBetween": "arcBetween"
+    "Edit": "Edit"
 };
 
 declare const Picker;
@@ -22,7 +22,7 @@ const defaultRenderSettings: RenderSettings = {
     },
     noClose: true
 }
-const addLayer = function () {
+const addLayer = function (data?: {paths: path[], renderSettings: RenderSettings}) {
     const id = nextLayerId++;
     let newLayer: HTMLDivElement = html.div({className: "layer", eventListeners: {click: () => setActiveLayer(id)}},
         html.div({className: "layer-nav"},
@@ -37,7 +37,14 @@ const addLayer = function () {
         ),
         html.button({className: "layer-render-button", eventListeners: {click: (e:MouseEvent) => {
             e.cancelBubble = true;
-            if (layers.length == 1) return;
+            if (layers.length == 1) {
+                deleteLayer(id);
+                nextLayerId = 0;
+                addLayer();
+                activeLayer = 0;
+                setActiveLayer(0);
+                return;
+            }
             let nextLayer = getLayerIndex(id) - 1; if (nextLayer == -1) nextLayer = 1;
             setActiveLayer(layers[nextLayer].id);
             deleteLayer(id);
@@ -53,7 +60,8 @@ const addLayer = function () {
         html: newLayer,
         paths: [{list: []}],
         renderSettings: free(defaultRenderSettings),
-        id
+        id,
+        ...data
     })
 };
 const getLayerIndex = function (layerId: number): number {
@@ -102,6 +110,8 @@ const deleteLayer = function (layerId: number) {
     document.getElementById("layer-list").removeChild(layers[index].html);
     layers.splice(index, 1);
 };
+
+let projectName = "project.vge";
 
 let nextLayerId = 0;
 let layers: {paths: path[], renderSettings: RenderSettings, html: HTMLDivElement, id: number, hidden?: boolean}[] = []
@@ -232,7 +242,8 @@ let tempVars: {
     x1?: number,
     y1?: number,
     x2?: number,
-    y2?: number
+    y2?: number,
+    list?: {Point: listNode, mirrorX: boolean, mirrorY: boolean, focus: "point" | "start" | "end", original: listNode}[]
 } = {};
 
 let preview = false;
@@ -247,6 +258,19 @@ canvas.onmousemove = ev => {
     hoveredX = Math.round((mouseX - 25) / spacing);
     hoveredY = Math.round((mouseY - 25) / spacing);
 
+    if (tool === toolTypes.Edit && tempVars.list !== undefined) {
+        tempVars.list.forEach(v => {
+            if (v.focus === "point") {
+                v.Point.x = hoveredX;
+                v.Point.y = hoveredY;
+            } else if (v.focus === "start") {
+                v.Point.startPoint = {x: hoveredX, y: hoveredY};
+            } else {
+                v.Point.endPoint = {x: hoveredX, y: hoveredY};
+            }
+        })
+    }
+
 };
 canvas.onmouseup = ev => {
     EM.fire("click", { x: ev.offsetX, y: ev.offsetY, hoveredX, hoveredY });
@@ -254,6 +278,36 @@ canvas.onmouseup = ev => {
 window.onkeyup = (kv: KeyboardEvent) => EM.fire("keyUp", kv);
 window.onkeydown = (kv: KeyboardEvent) => EM.fire("keydown", kv);
 
+const getPoints = function (x: number, y: number) {
+    let points: {point: listNode, mirrorX: boolean, mirrorY: boolean, focus: "point" | "start" | "end"}[] = [];
+    grid.forEach(v => {
+        v.list.forEach(i => {
+            if (i.x === x && i.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "point"});
+            }
+            if (i.endPoint.x === x && i.endPoint.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "end"});
+            }
+            if (i.startPoint.x === x && i.startPoint.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "start"});
+            }
+        });
+        if (!v.mirrorX && !v.mirrorY) return;
+        mirroredPath(v, gridSize).list.forEach(i => {
+            if (i.endPoint.x === x && i.endPoint.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "end"});
+            }
+            if (i.startPoint.x === x && i.startPoint.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "start"});
+            }
+            if (i.x === y && i.y === y) {
+                points.push({point: i, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: "point"});
+            }
+        });
+    });
+
+    return points;
+}
 const getStartPoint = function (listNode: listNode) {
     if (listNode.startPoint) return listNode.startPoint;
     else return listNode;
@@ -442,7 +496,7 @@ const drawGrid = function (gridSize: number) {
                         startAngle: 0,
                         endAngle: Math.PI * 2
                     }], {
-                    fill: hovered === 1 ? "#00ff00" : hovered === 2 ? "#0000ff" : "#000000"
+                    fill: hovered === 1 && (tool === toolTypes.Edit && getPoints(x, y).length > 0 || tool !== toolTypes.Edit) ? "#00ff00" : hovered === 2 ? "#0000ff" : "#000000"
                 });
             }
 
@@ -466,7 +520,10 @@ const drawGrid = function (gridSize: number) {
 const exportRender = function () {
     CR.Reset();
     drawLayers(true);
-    navigator.clipboard.writeText(CR.GetDataURL());
+    //navigator.clipboard.writeText(CR.GetDataURL());
+    CR.canvas.toBlob((blob) => {
+        saveAs(blob, projectName.substring(0, projectName.length - 4) + ".png", "image/png");
+    })
 };
 const addBlanks = function () {
 
@@ -477,6 +534,20 @@ const undo = function () {
 
     while (grid.length > 1 && grid[grid.length - 1].list.length == 0) grid.pop();
 
+    if (tool === toolTypes.Edit && tempVars.list !== undefined) {
+        tempVars.list.forEach(v => {
+            if (v.focus === "point") {
+                v.Point.x = v.original.x;
+                v.Point.y = v.original.y;
+            } else if (v.focus === "start") {
+                v.Point.startPoint = v.original.startPoint;
+            } else {
+                v.Point.endPoint = v.original.endPoint;
+            }
+        });
+
+        tempVars.list = undefined;
+    }
     if (tempVars.x1 === undefined) grid[grid.length - 1].list.pop();
     else {
         if (tempVars.x2 !== undefined) {
@@ -527,4 +598,11 @@ const addArc = function (x: number, y: number) {
 
     };
 };
+const addEdit = function (x:  number, y: number) {
+    if (tempVars.list === undefined) {
+        tempVars.list = getPoints(x, y).map(v => ({Point: v.point, mirrorX: v.mirrorX, mirrorY: v.mirrorY, focus: v.focus, original: free(v.point)}));
+    } else {
+        tempVars.list = undefined;
+    }
+}
 
